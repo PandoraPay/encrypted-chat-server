@@ -7,11 +7,29 @@ const {Helper, Exception, BufferHelper} = global.kernel.helpers;
 import Argv from "bin/argv/argv"
 
 import Tests from 'tests/tests/tests-index';
+import MainSettings from "./main-settings/main-settings"
 
 export default class App extends Kernel.utils.App {
 
     constructor(args){
         super(args);
+    }
+
+    async createMainSettings(scope = this._scope, merge = {} ){
+
+        //stop the forging on the previous
+        const mainSettings = new this._scope.MainSettings(  Helper.merge( scope, merge, true )  );
+
+        this.setScope( { _scope: scope }, "mainSettings", mainSettings);
+
+        if ( await scope.mainSettings.initializeMainSettings()  === false)
+            throw new Exception(this, "MainSettings couldn't be initialized");
+
+        await this.events.emit("start/main-settings-created", scope);
+
+        return mainSettings;
+
+
     }
 
     setAdditionalEvents(){
@@ -20,6 +38,8 @@ export default class App extends Kernel.utils.App {
         Network.app.setAdditionalEvents.call(this);
 
         this.events.on("start/argv-set", () =>{
+
+            if ( !this._scope.MainSettings ) this._scope.MainSettings = MainSettings;
 
             this._scope.argv = Argv(this._scope.argv);
 
@@ -73,6 +93,11 @@ export default class App extends Kernel.utils.App {
 
 
         this.events.on("master-cluster/started", async (masterCluster) => {
+
+            await this.createMainSettings(  {
+                ...this._scope,
+                masterCluster: this._scope.masterCluster,
+            },  );
 
         });
 

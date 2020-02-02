@@ -1,4 +1,8 @@
-export default class BaseChainData extends DBSchema {
+const {Helper, Exception} = global.kernel.helpers;
+const {MarshalData} = global.kernel.marshal;
+const {DBSchema} = global.kernel.marshal.db;
+
+export default class SettingsData extends DBSchema {
 
     constructor(scope, schema = {}, data, type, creationOptions) {
 

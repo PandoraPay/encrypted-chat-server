@@ -43,7 +43,7 @@ export default class MainSettings extends Events {
             this._scope.logger.error(this, "Error loading Main Settings", err);
         }
 
-        if (this._scope.argv.createNewTestNetEncryptedServer )
+        if (this._scope.argv.encryptedChatServer.createNewTestNet)
             if (!this._scope.db.isSynchronized || this._scope.masterCluster.isMasterCluster) {
 
                 if (!cleared) {
