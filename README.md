@@ -1,3 +1,7 @@
+# Encrypted Chat Server
+
+End to End Encrypted Chat Server using Elliptic Curves
+
 ##### Specify port
 
 ```

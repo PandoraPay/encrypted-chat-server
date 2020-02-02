@@ -7,6 +7,7 @@ const cryptography = global.cryptography;
 const networking = global.networking;
 
 const App = require('src/app').default;
+const TestsFiles = require("tests/tests/tests-index").default;
 
 const library = {
 
@@ -15,56 +16,6 @@ const library = {
     ...networking,
 
     app: new App({}),
-
-    blockchain:{
-
-        block: {
-            Block,
-            Genesis,
-            BlockVersionEnum,
-            merkleTree:{
-                TransactionsMerkleTree,
-                TransactionsMerkleTreeNode,
-                TransactionsMerkleTreeRoot,
-            },
-        },
-
-        mempool:{
-            MemPool,
-        },
-
-        chain:{
-            MainChain,
-            BaseChain,
-            SubChain,
-            data:{
-                MainChainData,
-                BaseChainData,
-            },
-
-            accountTree:{
-                AccountTreeNode,
-                AccountTreeRoot,
-                AccountTreeVirtual,
-                AccountTreeNodeData,
-            }
-
-        },
-
-        transactions:{
-            BlockchainSimpleTransaction,
-        },
-
-
-    },
-
-    exchange:{
-        Exchange,
-        ExchangeOffer,
-        ExchangeOfferPayment,
-        ExchangeOfferPaymentTypeEnum,
-        ExchangeAvailablePayments
-    },
 
     utils: {
         ...kernel.utils,
