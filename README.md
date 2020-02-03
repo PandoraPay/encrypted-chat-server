@@ -1,6 +1,8 @@
 # Encrypted Chat Server
 
-End to End Encrypted Chat Server using Elliptic Curves
+End to End Encrypted Chat Server using Elliptic Curves.
+
+Later on we can implemented a simple Delegated POS blockchain that allows pruning old blocks.
 
 ##### Specify port
 
@@ -22,9 +24,10 @@ End to End Encrypted Chat Server using Elliptic Curves
 
 ##### Deploy your own test net
 
-To deploy your own test net, you need to configure a new test net and start forging as the staking genesis transaction will be set randomly to you.
+To deploy your own test net, you need to configure a new test net
 
 Node parameters to set up a testnet network
+
 ```
 --settings:networkType 1 --encryptedChatServer:createNewTestNet true
 ```

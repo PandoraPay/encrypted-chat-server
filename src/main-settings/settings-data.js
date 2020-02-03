@@ -19,6 +19,10 @@ export default class SettingsData extends DBSchema {
                         type: "number",
                         default: 0,
 
+                        validation(version){
+                            return version === 0;
+                        },
+
                         position: 100,
                     },
 
