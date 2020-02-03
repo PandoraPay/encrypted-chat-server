@@ -7,11 +7,11 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
 
         super(scope);
 
-        this._offersDownloading = {};
+        this._encryptedChatDownloading = {};
 
-        this._scope.events.on("start/main-settings-created", ()=>{
+        this._scope.events.on("start/main-chat-created", ()=>{
 
-            // this._scope.mainSettings.on( "exchange/offer-included", ( {data, senderSockets } ) => {
+            // this._scope.mainChat.on( "exchange/offer-included", ( {data, senderSockets } ) => {
             //
             //     /**
             //      * Sending notification that a new offer was included
@@ -35,6 +35,12 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
 
         return {
 
+            "encrypted-chat/get-info":{
+                handle:  this._getEncryptedChatInfo,
+                maxCallsPerSecond:  100,
+                descr: "Returns basic information",
+            },
+
             "encrypted-chat/content-count": {
                 handle:  this._getEncryptedChatContentCount,
                 maxCallsPerSecond:  10,
@@ -56,7 +62,7 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
             "encrypted-chat/get-message": {
                 handle:  this._getEncryptedChatMessage,
                 maxCallsPerSecond:  50,
-                descr: "Returns an chat message. "
+                descr: "Returns an encrypted message. "
             },
 
             "encrypted-chat/new-message":{
@@ -65,6 +71,16 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
                 descr: "A new encrypted message"
             },
 
+        }
+
+    }
+
+    _getEncryptedChatInfo(){
+
+        return {
+            index: this._scope.mainChat.data.index,
+            timestamp: this._scope.mainChat.data.timestamp,
+            target: this._scope.mainChat.data.target,
         }
 
     }
@@ -126,18 +142,18 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
 
     async _newEncryptedChatMessage({encryptedMessage}, res, socket){
 
-        const offerObject = this._scope.exchange.exchangeOfferValidator.validateExchangeOffer(offer);
-        const offerId = offerObject.hash().toString("hex");
+        const encryptedMessageObject = this._scope.cryptography.encryptedMessageValidator.validateEncryptedMessage(encryptedMessage);
+        const hash = encryptedMessageObject.hash().toString("hex");
 
-        this._scope.logger.warn(this, "new offer received", { offerId });
+        this._scope.logger.warn(this, "new encrypted message received", { hash });
 
         let resolver;
-        this._offersDownloading[offerId] = new Promise( resolve => resolver = resolve);
+        this._encryptedChatDownloading[hash] = new Promise( resolve => resolver = resolve);
 
         let out;
 
         try{
-            out = await this._scope.exchange.newExchangeOffer( offerObject, true, true, socket);
+            out = await this._scope.mainChat.newEncryptedMessage( encryptedMessageObject, true, true, socket);
         }catch(err){
             if (this._scope.argv.debug.enabled)
                 this._scope.logger.error(this, "newExchange raised an error", err);
@@ -145,7 +161,7 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
 
         resolver(!!out);
 
-        delete this._offersDownloading[offerId];
+        delete this._encryptedChatDownloading[hash];
 
         return !!out;
     }

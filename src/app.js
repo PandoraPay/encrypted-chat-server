@@ -9,7 +9,7 @@ import Argv from "bin/argv/argv"
 import EncryptedChatCommonSocketRouterPlugin from "./sockets/protocol/encrypted-chat-common-socket-router-plugin"
 
 import Tests from 'tests/tests/tests-index';
-import MainSettings from "./main-settings/main-settings"
+import MainChat from "./main-chat/main-chat"
 
 export default class App extends Kernel.utils.App {
 
@@ -17,19 +17,19 @@ export default class App extends Kernel.utils.App {
         super(args);
     }
 
-    async createMainSettings(scope = this._scope, merge = {} ){
+    async createMainChat(scope = this._scope, merge = {} ){
 
         //stop the forging on the previous
-        const mainSettings = new this._scope.MainSettings(  Helper.merge( scope, merge, true )  );
+        const mainChat = new this._scope.MainChat(  Helper.merge( scope, merge, true )  );
 
-        this.setScope( { _scope: scope }, "mainSettings", mainSettings);
+        this.setScope( { _scope: scope }, "mainChat", mainChat);
 
-        if ( await scope.mainSettings.initializeMainSettings()  === false)
-            throw new Exception(this, "MainSettings couldn't be initialized");
+        if ( await scope.mainChat.initializeMainChat()  === false)
+            throw new Exception(this, "MainChat couldn't be initialized");
 
-        await this.events.emit("start/main-settings-created", scope);
+        await this.events.emit("start/main-chat-created", scope);
 
-        return mainSettings;
+        return mainChat;
 
 
     }
@@ -41,7 +41,7 @@ export default class App extends Kernel.utils.App {
 
         this.events.on("start/argv-set", () =>{
 
-            if ( !this._scope.MainSettings ) this._scope.MainSettings = MainSettings;
+            if ( !this._scope.MainChat ) this._scope.MainChat = MainChat;
 
             this._scope.argv = Argv(this._scope.argv);
 
@@ -96,7 +96,7 @@ export default class App extends Kernel.utils.App {
 
         this.events.on("master-cluster/started", async (masterCluster) => {
 
-            await this.createMainSettings(  {
+            await this.createMainChat(  {
                 ...this._scope,
                 masterCluster: this._scope.masterCluster,
             },  );
@@ -115,5 +115,6 @@ export default class App extends Kernel.utils.App {
 
     }
 
+    get cryptography(){  return this._scope.cryptography }
 
 }

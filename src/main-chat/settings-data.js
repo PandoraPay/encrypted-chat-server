@@ -15,6 +15,11 @@ export default class SettingsData extends DBSchema {
                         fixedBytes: 12,
                     },
 
+                    id:{
+                        default: "chatMainSettingsData",
+                        fixedBytes: 20,
+                    },
+
                     version: {
                         type: "number",
                         default: 0,
@@ -46,9 +51,7 @@ export default class SettingsData extends DBSchema {
                     target: {
 
                         type: "buffer",
-
-                        // minsize: 0,
-                        // maxsize: 2^256,
+                        fixedBytes: 32,
 
                         position: 103,
                     },
