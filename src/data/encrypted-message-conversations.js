@@ -19,7 +19,7 @@ export default class EncryptedMessageConversations extends DBSchema {
                         fixedBytes: 66,
                     },
 
-                    destinationPublicKey:{
+                    receiverPublicKey:{
                         type: "buffer",
                         fixedBytes: 33,
 
@@ -30,6 +30,7 @@ export default class EncryptedMessageConversations extends DBSchema {
 
                 saving:{
                     indexableById: true,
+                    indexable: true,
                 },
 
             },

@@ -125,29 +125,29 @@ export default class MainChat extends Events {
 
         const encryptedMessageConversation = new EncryptedMessageConversations(this._scope, undefined, {
             table: "encryptMsgConv"+encryptedMessage.senderPublicKey.toString("hex"),
-            id: encryptedMessage.destinationPublicKey.toString("hex"),
-            destinationPublicKey: encryptedMessage.destinationPublicKey
+            id: encryptedMessage.receiverPublicKey.toString("hex"),
+            receiverPublicKey: encryptedMessage.receiverPublicKey
         } );
 
         await encryptedMessageConversation.save();
 
         const encryptedMessageConversation2 = new EncryptedMessageConversations(this._scope, undefined, {
-            table: "encryptMsgConv"+encryptedMessage.destinationPublicKey.toString("hex"),
+            table: "encryptMsgConv"+encryptedMessage.receiverPublicKey.toString("hex"),
             id: encryptedMessage.senderPublicKey.toString("hex"),
-            destinationPublicKey: encryptedMessage.senderPublicKey
+            receiverPublicKey: encryptedMessage.senderPublicKey
         } );
 
         await encryptedMessageConversation2.save();
 
         const publicKeys = [
             encryptedMessage.senderPublicKey.toString("hex"),
-            encryptedMessage.destinationPublicKey.toString("hex"),
+            encryptedMessage.receiverPublicKey.toString("hex"),
         ];
 
         publicKeys.sort( (a,b) => a.localeCompare(b) );
 
         const encryptedMessageConversationMessage = new EncryptedMessageConversationMessages(this._scope, undefined, {
-            table: "encryptMsgConvMsg"+publicKeys[0]+":"+publicKeys[1],
+            table: "encryptMsgConvMsg"+publicKeys[0]+"_"+publicKeys[1],
             id: encryptedMessage.hash().toString("hex"),
             index: 0
         } );

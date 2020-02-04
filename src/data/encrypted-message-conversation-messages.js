@@ -29,6 +29,7 @@ export default class EncryptedMessageConversationMessages extends DBSchema {
 
                 saving:{
                     indexableById: true,
+                    indexable: true,
                 },
 
             },

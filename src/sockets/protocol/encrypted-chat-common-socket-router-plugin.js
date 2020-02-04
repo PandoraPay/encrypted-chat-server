@@ -1,3 +1,6 @@
+import EncryptedMessageConversationMessages from "../../data/encrypted-message-conversation-messages";
+
+const {EncryptedMessage} = global.cryptography.encryption;
 const {SocketRouterPlugin} = global.networking.sockets.protocol;
 const {Helper, Exception, StringHelper, EnumHelper} = global.kernel.helpers;
 
@@ -85,59 +88,66 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
 
     }
 
-    async _getEncryptedChatContentCount({publicKey}){
+    async _getEncryptedChatContentCount({publicKey1, publicKey2}){
 
-        const array = this._scope.exchange.getExchangeData(offerType).array;
-        return array.length;
+        if (Buffer.isBuffer(publicKey1)) publicKey1 = publicKey1.toString("hex");
+        if (Buffer.isBuffer(publicKey2)) publicKey2 = publicKey2.toString("hex");
+
+        const publicKeys = [publicKey1, publicKey2];
+        publicKeys.sort( (a,b) => a.localeCompare(b) );
+
+        const out = await EncryptedMessageConversationMessages.count( this._scope.db, undefined, "encryptMsgConvMsg"+publicKeys[0]+"_"+publicKeys[1]);
+
+        return out ? Number.parseInt(out) : undefined;
 
     }
 
-    _getEncryptedChatContentIds({ publicKey, index = Number.MAX_SAFE_INTEGER, limit = this._scope.argv.encryptedChatServer.protocolMaxMessagesIds }){
+    async _getEncryptedChatContentIds({ publicKey1, publicKey2, index = Number.MAX_SAFE_INTEGER, limit = this._scope.argv.encryptedChatServer.protocolMaxMessagesIds }){
+
+        if (Buffer.isBuffer(publicKey1)) publicKey1 = publicKey1.toString("hex");
+        if (Buffer.isBuffer(publicKey2)) publicKey2 = publicKey2.toString("hex");
+
+        const publicKeys = [publicKey1, publicKey2];
+        publicKeys.sort( (a,b) => a.localeCompare(b) );
 
         if (typeof index !== "number") return null;
         if (typeof limit !== "number") return null;
 
         limit = Math.max( 1, Math.min(limit, this._scope.argv.encryptedChatServer.protocolMaxMessagesIds) );
 
-        const array = this._scope.exchange.getExchangeData(offerType).array;
+        const startIndex = Math.max(0, index-limit);
 
-        index = Math.min( index, array.length );
-        const startIndex = Math.max(0, index-limit );
+        const obj = new EncryptedMessageConversationMessages(this._scope);
 
-        const out = {};
+        const elements = await this._scope.db._scanMiddleware( obj, '', "encryptMsgConvMsg"+publicKeys[0]+"_"+publicKeys[1],  startIndex, limit, undefined );
+        const out  = elements.filter ( obj => obj );
 
-        for (let i=startIndex; i < index; i++){
-
-            const offer = array[i].data;
-            const hash = offer.hash().toString("hex");
-            out[hash] = true;
-
-        }
 
         return {
-            out,
-            next: startIndex > 0 ? startIndex-1 : 0,
+            out ,
+            next: startIndex > 0 ? startIndex : -1,
         };
     }
 
-    _getEncryptedChatContent({publicKey, index = Number.MAX_SAFE_INTEGER, limit = this._scope.argv.encryptedChatServer.protocolMaxMessages, type = "buffer"  }){
+    async _getEncryptedChatContent({ publicKey1, publicKey2, index = Number.MAX_SAFE_INTEGER, limit = this._scope.argv.encryptedChatServer.protocolMaxMessages, type = "buffer"  }){
+
+        if (Buffer.isBuffer(publicKey1)) publicKey1 = publicKey1.toString("hex");
+        if (Buffer.isBuffer(publicKey2)) publicKey2 = publicKey2.toString("hex");
+
+        const publicKeys = [publicKey1, publicKey2];
+        publicKeys.sort( (a,b) => a.localeCompare(b) );
 
         if (typeof limit !== "number") return null;
         limit = Math.max( 1, Math.min(limit, this._scope.argv.encryptedChatServer.protocolMaxMessages ) );
 
-        const ids = this._getEncryptedChatContentIds({publicKey, index, limit});
-        if (!ids) return false;
+        const startIndex = Math.max(0, index-limit);
 
-        const map = this._scope.exchange.getExchangeData(publicKey).map;
+        const out = await this._scope.db.scan( EncryptedMessageConversationMessages, '', "encryptMsgConvMsg"+publicKeys[0]+"_"+publicKeys[1],  startIndex, limit, undefined );
 
-        for (const hash in ids.out){
-
-            const offer = map[hash].data;
-            ids.out[hash] = offer.toType(type);
-
-        }
-
-        return ids;
+        return {
+            out ,
+            next: startIndex > 0 ? startIndex : -1,
+        };
     }
 
     async _newEncryptedChatMessage({encryptedMessage}, res, socket){
@@ -166,13 +176,14 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
         return !!out;
     }
 
-    async _getEncryptedChatMessage({encryptedMessageHash, offerType, type = "buffer" }, res, socket){
+    async _getEncryptedChatMessage({encryptedMessageHash, type = "buffer" }, res, socket){
 
-        const map = this._scope.exchange.getExchangeData(offerType).map;
+        const encryptedMessage = new EncryptedMessage(this._scope, );
+        encryptedMessage.id = encryptedMessageHash;
 
-        const out = map[offerHash];
+        await encryptedMessage.load();
 
-        if ( out ) return out.data.toType(type);
+        return encryptedMessage.toType(type);
 
     }
 
