@@ -12,7 +12,7 @@ export default class EncryptedMessageConversations extends DBSchema {
 
                     table: {
                         default: "encryptMsgConv",
-                        fixedBytes: 14+33,
+                        fixedBytes: 14+1+33,
                     },
 
                     id:{

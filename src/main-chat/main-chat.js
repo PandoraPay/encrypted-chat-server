@@ -76,6 +76,13 @@ export default class MainChat extends Events {
 
         await this.data.clearData();
 
+        this.data = new SettingsData({
+            ...this._scope,
+            mainChat: this,
+        });
+
+        this.data.__changes["index"] = true;
+
         await this.data.save();
 
         this._scope.logger.warn(this, "Main Chain data cleared");
@@ -124,7 +131,7 @@ export default class MainChat extends Events {
         await this.data.save();
 
         const encryptedMessageConversation = new EncryptedMessageConversations(this._scope, undefined, {
-            table: "encryptMsgConv"+encryptedMessage.senderPublicKey.toString("hex"),
+            table: "encryptMsgConv:"+encryptedMessage.senderPublicKey.toString("hex"),
             id: encryptedMessage.receiverPublicKey.toString("hex"),
             receiverPublicKey: encryptedMessage.receiverPublicKey
         } );
@@ -132,7 +139,7 @@ export default class MainChat extends Events {
         await encryptedMessageConversation.save();
 
         const encryptedMessageConversation2 = new EncryptedMessageConversations(this._scope, undefined, {
-            table: "encryptMsgConv"+encryptedMessage.receiverPublicKey.toString("hex"),
+            table: "encryptMsgConv:"+encryptedMessage.receiverPublicKey.toString("hex"),
             id: encryptedMessage.senderPublicKey.toString("hex"),
             receiverPublicKey: encryptedMessage.senderPublicKey
         } );
@@ -147,16 +154,19 @@ export default class MainChat extends Events {
         publicKeys.sort( (a,b) => a.localeCompare(b) );
 
         const encryptedMessageConversationMessage = new EncryptedMessageConversationMessages(this._scope, undefined, {
-            table: "encryptMsgConvMsg"+publicKeys[0]+"_"+publicKeys[1],
+            table: "encryptMsgConvMsg:"+publicKeys[0]+"_"+publicKeys[1],
             id: encryptedMessage.hash().toString("hex"),
             index: 0
         } );
 
         await encryptedMessageConversationMessage.save();
 
-        if (propagateSockets){
+        if (propagateSockets)
+            this._scope.masterCluster.broadcast("encrypted-chat/new-message-id", { encryptedMessageId: hash }, senderSockets);
 
-        }
+        await this.emit("main-chat/new-encrypted-message", {
+            data: { encryptedMessage, encryptedMessageId: hashId},
+        });
 
         return true;
     }

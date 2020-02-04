@@ -12,20 +12,6 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
 
         this._encryptedChatDownloading = {};
 
-        this._scope.events.on("start/main-chat-created", ()=>{
-
-            // this._scope.mainChat.on( "exchange/offer-included", ( {data, senderSockets } ) => {
-            //
-            //     /**
-            //      * Sending notification that a new offer was included
-            //      */
-            //
-            //     this._scope.masterCluster.broadcast("exchange/new-offer", { offer: data.offer.toBuffer() }, senderSockets);
-            //
-            // });
-
-        });
-
         this._scope.events.on("master-cluster/started", ()=> this.initializePluginMasterCluster() );
 
     }
@@ -74,6 +60,12 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
                 descr: "A new encrypted message"
             },
 
+            "encrypted-chat/new-message-id":{
+                handle:  this._newEncryptedChatMessageId,
+                maxCallsPerSecond:  20,
+                descr: "A new encrypted message id"
+            },
+
         }
 
     }
@@ -96,7 +88,7 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
         const publicKeys = [publicKey1, publicKey2];
         publicKeys.sort( (a,b) => a.localeCompare(b) );
 
-        const out = await EncryptedMessageConversationMessages.count( this._scope.db, undefined, "encryptMsgConvMsg"+publicKeys[0]+"_"+publicKeys[1]);
+        const out = await EncryptedMessageConversationMessages.count( this._scope.db, undefined, "encryptMsgConvMsg:"+publicKeys[0]+"_"+publicKeys[1]);
 
         return out ? Number.parseInt(out) : undefined;
 
@@ -119,7 +111,7 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
 
         const obj = new EncryptedMessageConversationMessages(this._scope);
 
-        const elements = await this._scope.db._scanMiddleware( obj, '', "encryptMsgConvMsg"+publicKeys[0]+"_"+publicKeys[1],  startIndex, limit, undefined );
+        const elements = await this._scope.db._scanMiddleware( obj, '', "encryptMsgConvMsg:"+publicKeys[0]+"_"+publicKeys[1],  startIndex, limit, undefined );
         const out  = elements.filter ( obj => obj );
 
 
@@ -142,7 +134,7 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
 
         const startIndex = Math.max(0, index-limit);
 
-        const out = await this._scope.db.scan( EncryptedMessageConversationMessages, '', "encryptMsgConvMsg"+publicKeys[0]+"_"+publicKeys[1],  startIndex, limit, undefined );
+        const out = await this._scope.db.scan( EncryptedMessageConversationMessages, '', "encryptMsgConvMsg:"+publicKeys[0]+"_"+publicKeys[1],  startIndex, limit, undefined );
 
         return {
             out ,
@@ -170,16 +162,45 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
         }
 
         resolver(!!out);
-
         delete this._encryptedChatDownloading[hash];
 
         return !!out;
     }
 
-    async _getEncryptedChatMessage({encryptedMessageHash, type = "buffer" }, res, socket){
+    async _newEncryptedChatMessageId({encryptedMessageId}, res, socket){
 
-        const encryptedMessage = new EncryptedMessage(this._scope, );
-        encryptedMessage.id = encryptedMessageHash;
+        if ( Buffer.isBuffer(encryptedMessageId) ) encryptedMessageId = encryptedMessageId.toString("hex");
+
+        let resolver;
+        this._encryptedChatDownloading[encryptedMessageId] = new Promise( resolve => resolver = resolve);
+
+        let out;
+
+        try{
+
+            const encryptedMessage = await socket.emitAsync("encrypted-chat/get-message", { encryptedMessageId }, 0);
+            const encryptedMessageObject = this._scope.cryptography.encryptedMessageValidator.validateEncryptedMessage(encryptedMessage);
+
+            out = await this._scope.mainChat.newEncryptedMessage( encryptedMessageObject, true, true, socket);
+
+        }catch(err){
+            if (this._scope.argv.debug.enabled)
+                this._scope.logger.error(this, "newExchange raised an error", err);
+        }
+
+        resolver(!!out);
+        delete this._encryptedChatDownloading[encryptedMessageId];
+
+        return !!out;
+
+    }
+
+    async _getEncryptedChatMessage({encryptedMessageId, type = "buffer" }, res, socket){
+
+        if (Buffer.isBuffer(encryptedMessageId)) encryptedMessageId = encryptedMessageId.toString("hex");
+
+        const encryptedMessage = new EncryptedMessage(this._scope, );;
+        encryptedMessage.id = encryptedMessageId;
 
         await encryptedMessage.load();
 
