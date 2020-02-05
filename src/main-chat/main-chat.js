@@ -149,24 +149,27 @@ export default class MainChat extends Events {
         const publicKeys = [
             encryptedMessage.senderPublicKey.toString("hex"),
             encryptedMessage.receiverPublicKey.toString("hex"),
-        ];
+        ].sort( (a,b) => a.localeCompare(b) );
 
-        publicKeys.sort( (a,b) => a.localeCompare(b) );
+        const count = await EncryptedMessageConversationMessages.count( this._scope.db, undefined, "encryptMsgConvMsg:"+publicKeys[0]+"_"+publicKeys[1]);
 
         const encryptedMessageConversationMessage = new EncryptedMessageConversationMessages(this._scope, undefined, {
             table: "encryptMsgConvMsg:"+publicKeys[0]+"_"+publicKeys[1],
             id: encryptedMessage.hash().toString("hex"),
-            index: 0
+            index: count || 0
         } );
 
         await encryptedMessageConversationMessage.save();
 
         if (propagateSockets)
-            this._scope.masterCluster.broadcast("encrypted-chat/new-message-id", { encryptedMessageId: hash }, senderSockets);
+            this._scope.masterCluster.broadcast("encrypted-chat/new-message-id", {encryptedMessageId: hash}, senderSockets);
 
         await this.emit("main-chat/new-encrypted-message", {
             data: { encryptedMessage, encryptedMessageId: hashId},
         });
+
+        await this._scope.events.emit(`subscriptions/encrypted-chat/${publicKeys[0]}`, encryptedMessage.toBuffer() );
+        await this._scope.events.emit(`subscriptions/encrypted-chat/${publicKeys[1]}`, encryptedMessage.toBuffer() );
 
         return true;
     }

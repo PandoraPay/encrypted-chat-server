@@ -2,7 +2,7 @@ export default {
 
     createNewTestNet: false,
 
-    protocolMaxMessagesIds: 40,
+    protocolMaxMessagesIds: 20,
     protocolMaxMessages: 10,
 
 }

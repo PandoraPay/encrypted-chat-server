@@ -94,7 +94,7 @@ export default class App extends Kernel.utils.App {
         });
 
 
-        this.events.on("master-cluster/started", async (masterCluster) => {
+        this.events.on("master-cluster/initialized", async (masterCluster) => {
 
             await this.createMainChat(  {
                 ...this._scope,
