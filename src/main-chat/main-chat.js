@@ -145,6 +145,7 @@ export default class MainChat extends Events {
             encryptedMessage: encryptedMessage.hash(),
         } );
 
+        await conversation1.exists();//loading ids
         await conversation1.save();
 
         const conversation2 = new ChatConversations(this._scope, undefined, {
@@ -155,6 +156,7 @@ export default class MainChat extends Events {
             encryptedMessage: encryptedMessage.hash(),
         } );
 
+        await conversation2.exists(); //loading ids
         await conversation2.save();
 
 
