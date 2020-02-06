@@ -1,4 +1,5 @@
-import EncryptedMessageConversationMessages from "../../data/encrypted-message-conversation-messages";
+import ChatConversations from "../../data/chat-conversations";
+import ChatConversationMessages from "../../data/chat-conversation-messages"
 
 const {EncryptedMessage} = global.cryptography.encryption;
 const {SocketRouterPlugin} = global.networking.sockets.protocol;
@@ -51,7 +52,13 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
             "encrypted-chat/conversations/content-count": {
                 handle:  this._getEncryptedConversationsContentCount,
                 maxCallsPerSecond:  10,
-                descr: "Returns how conversations a public key has"
+                descr: "Returns how many conversations a public key has"
+            },
+
+            "encrypted-chat/conversations/content-ids": {
+                handle:  this._getEncryptedConversationsContentIds,
+                maxCallsPerSecond:  30,
+                descr: "Returns all conversations ids "
             },
 
             "encrypted-chat/get-message": {
@@ -111,7 +118,7 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
 
         const publicKeys = [publicKey1, publicKey2].sort( (a,b) => a.localeCompare(b) );
 
-        const out = await EncryptedMessageConversationMessages.count( this._scope.db, undefined, "encryptMsgConvMsg:"+publicKeys[0]+"_"+publicKeys[1]);
+        const out = await ChatConversationMessages.count( this._scope.db, undefined, "converMsgs:"+publicKeys[0]+"_"+publicKeys[1]);
 
         return out;
 
@@ -129,18 +136,12 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
 
         limit = Math.max( 1, Math.min(limit, this._scope.argv.encryptedChatServer.protocolMaxMessagesIds) );
 
-        const startIndex = Math.max(0, index-limit);
+        const obj = new ChatConversationMessages(this._scope);
 
-        const obj = new EncryptedMessageConversationMessages(this._scope);
-
-        const elements = await this._scope.db._scanMiddleware( obj, '', "encryptMsgConvMsg:"+publicKeys[0]+"_"+publicKeys[1],  startIndex, limit, undefined );
+        const elements = await this._scope.db._scanMiddleware( obj, '', "converMsgs:"+publicKeys[0]+"_"+publicKeys[1],  index, limit, undefined );
         const out  = elements.filter ( obj => obj );
 
-
-        return {
-            out ,
-            next: startIndex > 0 ? startIndex : -1,
-        };
+        return out;
     }
 
     async _getEncryptedConversationMessagesContent({ publicKey1, publicKey2, index = Number.MAX_SAFE_INTEGER, limit = this._scope.argv.encryptedChatServer.protocolMaxMessages, type = "buffer"  }){
@@ -153,14 +154,9 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
         if (typeof limit !== "number") return null;
         limit = Math.max( 1, Math.min(limit, this._scope.argv.encryptedChatServer.protocolMaxMessages ) );
 
-        const startIndex = Math.max(0, index-limit);
+        const out = await this._scope.db.scan( ChatConversationMessages, '', "converMsgs:"+publicKeys[0]+"_"+publicKeys[1],  index, limit, undefined );
 
-        const out = await this._scope.db.scan( EncryptedMessageConversationMessages, '', "encryptMsgConvMsg:"+publicKeys[0]+"_"+publicKeys[1],  startIndex, limit, undefined );
-
-        return {
-            out ,
-            next: startIndex > 0 ? startIndex : -1,
-        };
+        return out;
     }
 
     /***
@@ -171,11 +167,29 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
 
         if (Buffer.isBuffer(publicKey)) publicKey = publicKey.toString("hex");
 
-        const out = await EncryptedMessageConversations.count( this._scope.db, undefined, "encryptMsgConv:"+publicKey );
+        const out = await ChatConversationMessages.count( this._scope.db, undefined, "convers:"+publicKey );
 
         return out;
 
     }
+
+    async _getEncryptedConversationsContentIds({ publicKey, index = Number.MAX_SAFE_INTEGER, limit = this._scope.argv.encryptedChatServer.protocolMaxMessagesIds }){
+
+        if (Buffer.isBuffer(publicKey)) publicKey = publicKey.toString("hex");
+
+        if (typeof index !== "number") return null;
+        if (typeof limit !== "number") return null;
+
+        limit = Math.max( 1, Math.min(limit, this._scope.argv.encryptedChatServer.protocolMaxMessagesIds) );
+
+        const obj = new ChatConversations(this._scope);
+
+        const elements = await this._scope.db._scanMiddleware( obj, '', "convers:"+publicKey,  index, limit, undefined );
+        const out  = elements.filter ( obj => obj );
+
+        return out;
+    }
+
 
     async _newEncryptedMessage({encryptedMessage}, res, socket){
 
@@ -249,11 +263,7 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
 
         if ( Buffer.isBuffer(publicKey) ) publicKey = publicKey.toString("hex");
 
-        console.log("publicKey", publicKey);
-
         socket.subscribe(`encrypted-chat/${publicKey}`, notify );
-
-        console.log("Hello");
 
         return true;
 

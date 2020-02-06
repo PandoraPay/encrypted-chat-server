@@ -5,8 +5,8 @@ const {MarshalData} = global.kernel.marshal;
 const {DBSchema} = global.kernel.marshal.db;
 
 import SettingsData from "./settings-data"
-import EncryptedMessageConversations from "../data/encrypted-message-conversations"
-import EncryptedMessageConversationMessages from "../data/encrypted-message-conversation-messages"
+import ChatConversationMessages from "../data/chat-conversation-messages"
+import ChatConversations from "../data/chat-conversations"
 
 export default class MainChat extends Events {
 
@@ -130,36 +130,41 @@ export default class MainChat extends Events {
         this.data.index = this.data.index + 1;
         await this.data.save();
 
-        const encryptedMessageConversation = new EncryptedMessageConversations(this._scope, undefined, {
-            table: "encryptMsgConv:"+encryptedMessage.senderPublicKey.toString("hex"),
-            id: encryptedMessage.receiverPublicKey.toString("hex"),
-            receiverPublicKey: encryptedMessage.receiverPublicKey
-        } );
-
-        await encryptedMessageConversation.save();
-
-        const encryptedMessageConversation2 = new EncryptedMessageConversations(this._scope, undefined, {
-            table: "encryptMsgConv:"+encryptedMessage.receiverPublicKey.toString("hex"),
-            id: encryptedMessage.senderPublicKey.toString("hex"),
-            receiverPublicKey: encryptedMessage.senderPublicKey
-        } );
-
-        await encryptedMessageConversation2.save();
-
         const publicKeys = [
             encryptedMessage.senderPublicKey.toString("hex"),
             encryptedMessage.receiverPublicKey.toString("hex"),
         ].sort( (a,b) => a.localeCompare(b) );
 
-        const count = await EncryptedMessageConversationMessages.count( this._scope.db, undefined, "encryptMsgConvMsg:"+publicKeys[0]+"_"+publicKeys[1]);
+        const count = await ChatConversationMessages.count( this._scope.db, undefined, "converMsgs:"+publicKeys[0]+"_"+publicKeys[1]);
 
-        const encryptedMessageConversationMessage = new EncryptedMessageConversationMessages(this._scope, undefined, {
-            table: "encryptMsgConvMsg:"+publicKeys[0]+"_"+publicKeys[1],
-            id: encryptedMessage.hash().toString("hex"),
-            index: count || 0
+        const conversation1 = new ChatConversations(this._scope, undefined, {
+            table: "convers:"+encryptedMessage.senderPublicKey.toString("hex"),
+            id: encryptedMessage.receiverPublicKey.toString("hex"),
+            receiverPublicKey: encryptedMessage.receiverPublicKey,
+            count,
+            encryptedMessage: encryptedMessage.hash(),
         } );
 
-        await encryptedMessageConversationMessage.save();
+        await conversation1.save();
+
+        const conversation2 = new ChatConversations(this._scope, undefined, {
+            table: "convers:"+encryptedMessage.receiverPublicKey.toString("hex"),
+            id: encryptedMessage.senderPublicKey.toString("hex"),
+            receiverPublicKey: encryptedMessage.senderPublicKey,
+            count,
+            encryptedMessage: encryptedMessage.hash(),
+        } );
+
+        await conversation2.save();
+
+
+        const conversationMessage = new ChatConversationMessages(this._scope, undefined, {
+            table: "converMsgs:"+publicKeys[0]+"_"+publicKeys[1],
+            id: encryptedMessage.hash().toString("hex"),
+            count,
+        } );
+
+        await conversationMessage.save();
 
         if (propagateSockets)
             this._scope.masterCluster.broadcast("encrypted-chat/new-message-id", {encryptedMessageId: hash}, senderSockets);
