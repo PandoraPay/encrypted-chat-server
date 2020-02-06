@@ -35,6 +35,6 @@ Node parameters to set up a testnet network
 Run CLI command
 
 ```
-node start-node.js --masterCluster:serverCluster:httpServer:port 4005 --encryptedChatServer:createNewTestNet true
+node start-node.js --masterCluster:serverCluster:httpServer:port 4005 --encryptedChatServer:createNewTestNet true --dbPublic:redisDB:db 11 --settings:networkType 1
 ```
 
