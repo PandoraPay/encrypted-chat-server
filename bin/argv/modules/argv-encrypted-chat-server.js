@@ -2,7 +2,10 @@ export default {
 
     createNewTestNet: false,
 
-    protocolMaxMessagesIds: 20,
-    protocolMaxMessages: 10,
+    protocolMaxConversationMessagesIds: 20,
+    protocolMaxConversationMessages: 10,
+
+    protocolMaxConversationsIds: 20,
+    protocolMaxConversations: 10,
 
 }

@@ -61,6 +61,12 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
                 descr: "Returns all conversations ids "
             },
 
+            "encrypted-chat/conversations/content": {
+                handle:  this._getEncryptedConversationsContent,
+                maxCallsPerSecond:  30,
+                descr: "Returns all conversations"
+            },
+
             "encrypted-chat/get-message": {
                 handle:  this._getEncryptedMessage,
                 maxCallsPerSecond:  50,
@@ -124,7 +130,7 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
 
     }
 
-    async _getEncryptedConversationMessagesContentIds({ publicKey1, publicKey2, index = Number.MAX_SAFE_INTEGER, limit = this._scope.argv.encryptedChatServer.protocolMaxMessagesIds }){
+    async _getEncryptedConversationMessagesContentIds({ publicKey1, publicKey2, index = Number.MAX_SAFE_INTEGER, limit = this._scope.argv.encryptedChatServer.protocolMaxConversationMessagesIds }){
 
         if (Buffer.isBuffer(publicKey1)) publicKey1 = publicKey1.toString("hex");
         if (Buffer.isBuffer(publicKey2)) publicKey2 = publicKey2.toString("hex");
@@ -134,7 +140,7 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
         if (typeof index !== "number") return null;
         if (typeof limit !== "number") return null;
 
-        limit = Math.max( 1, Math.min(limit, this._scope.argv.encryptedChatServer.protocolMaxMessagesIds) );
+        limit = Math.max( 1, Math.min(limit, this._scope.argv.encryptedChatServer.protocolMaxConversationMessagesIds) );
 
         const obj = new ChatConversationMessages(this._scope);
 
@@ -144,7 +150,7 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
         return out;
     }
 
-    async _getEncryptedConversationMessagesContent({ publicKey1, publicKey2, index = Number.MAX_SAFE_INTEGER, limit = this._scope.argv.encryptedChatServer.protocolMaxMessages, type = "buffer"  }){
+    async _getEncryptedConversationMessagesContent({ publicKey1, publicKey2, index = Number.MAX_SAFE_INTEGER, limit = this._scope.argv.encryptedChatServer.protocolMaxConversationMessages, type = "buffer"  }){
 
         if (Buffer.isBuffer(publicKey1)) publicKey1 = publicKey1.toString("hex");
         if (Buffer.isBuffer(publicKey2)) publicKey2 = publicKey2.toString("hex");
@@ -152,7 +158,7 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
         const publicKeys = [publicKey1, publicKey2].sort( (a,b) => a.localeCompare(b) );
 
         if (typeof limit !== "number") return null;
-        limit = Math.max( 1, Math.min(limit, this._scope.argv.encryptedChatServer.protocolMaxMessages ) );
+        limit = Math.max( 1, Math.min(limit, this._scope.argv.encryptedChatServer.protocolMaxConversationMessages ) );
 
         const out = await this._scope.db.scan( ChatConversationMessages, '', "converMsgs:"+publicKeys[0]+"_"+publicKeys[1],  index, limit, undefined );
 
@@ -173,19 +179,33 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
 
     }
 
-    async _getEncryptedConversationsContentIds({ publicKey, index = Number.MAX_SAFE_INTEGER, limit = this._scope.argv.encryptedChatServer.protocolMaxMessagesIds }){
+    async _getEncryptedConversationsContentIds({ publicKey, index = Number.MAX_SAFE_INTEGER, limit = this._scope.argv.encryptedChatServer.protocolMaxConversationsIds }){
 
         if (Buffer.isBuffer(publicKey)) publicKey = publicKey.toString("hex");
 
         if (typeof index !== "number") return null;
         if (typeof limit !== "number") return null;
 
-        limit = Math.max( 1, Math.min(limit, this._scope.argv.encryptedChatServer.protocolMaxMessagesIds) );
+        limit = Math.max( 1, Math.min(limit, this._scope.argv.encryptedChatServer.protocolMaxConversationsIds) );
 
         const obj = new ChatConversations(this._scope);
 
         const elements = await this._scope.db._scanMiddleware( obj, '', "convers:"+publicKey,  index, limit, undefined );
         const out  = elements.filter ( obj => obj );
+
+        return out;
+    }
+
+    async _getEncryptedConversationsContent({ publicKey, index = Number.MAX_SAFE_INTEGER, limit = this._scope.argv.encryptedChatServer.protocolMaxConversations }){
+
+        if (Buffer.isBuffer(publicKey)) publicKey = publicKey.toString("hex");
+
+        if (typeof index !== "number") return null;
+        if (typeof limit !== "number") return null;
+
+        limit = Math.max( 1, Math.min(limit, this._scope.argv.encryptedChatServer.protocolMaxConversations) );
+
+        const out = await this._scope.db.scan( ChatConversations, index, limit, '', "convers:"+publicKey, undefined );
 
         return out;
     }

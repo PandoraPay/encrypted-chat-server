@@ -141,11 +141,13 @@ export default class MainChat extends Events {
             table: "convers:"+encryptedMessage.senderPublicKey.toString("hex"),
             id: encryptedMessage.receiverPublicKey.toString("hex"),
             receiverPublicKey: encryptedMessage.receiverPublicKey,
-            count,
-            encryptedMessage: encryptedMessage.hash(),
         } );
 
         await conversation1.exists();//loading ids
+
+        conversation1.count = count+1;
+        conversation1.encryptedMessage = encryptedMessage.hash();
+
         await conversation1.save();
 
         const conversation2 = new ChatConversations(this._scope, undefined, {
@@ -157,6 +159,10 @@ export default class MainChat extends Events {
         } );
 
         await conversation2.exists(); //loading ids
+
+        conversation2.count = count+1;
+        conversation2.encryptedMessage = encryptedMessage.hash();
+
         await conversation2.save();
 
 
