@@ -205,7 +205,11 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
 
         limit = Math.max( 1, Math.min(limit, this._scope.argv.encryptedChatServer.protocolMaxConversations) );
 
+        console.log("_getEncryptedConversationsContent", index, limit);
+
         const out = await this._scope.db.scan( ChatConversations, index, limit, '', "convers:"+publicKey, undefined );
+
+        console.log("_getEncryptedConversationsContent", out);
 
         return out;
     }
