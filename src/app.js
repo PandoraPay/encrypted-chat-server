@@ -7,6 +7,7 @@ const {Helper, Exception, BufferHelper} = global.kernel.helpers;
 import Argv from "bin/argv/argv"
 
 import EncryptedChatCommonSocketRouterPlugin from "./sockets/protocol/encrypted-chat-common-socket-router-plugin"
+import CaptchaCommonSocketRouterPlugin from "./sockets/protocol/captcha-common-socket-router-plugin"
 
 import Tests from 'tests/tests/tests-index';
 import MainChat from "./main-chat/main-chat"
@@ -87,6 +88,7 @@ export default class App extends Kernel.utils.App {
 
                 await Promise.all([
                     checkPlugin(commonSocketRouterPlugins, EncryptedChatCommonSocketRouterPlugin),
+                    checkPlugin(commonSocketRouterPlugins, CaptchaCommonSocketRouterPlugin),
                 ]);
 
                 //setting the clusters for clients and server

@@ -21,7 +21,7 @@ export default class Captcha{
         const message = {
             v: 0,
             text: captcha.text,
-            id: StringHelper.makeId(32),
+            id: StringHelper.generateRandomId(32),
             date: Math.floor( new Date().getTime() / 1000 ),
         };
 
