@@ -25,7 +25,8 @@
     "ssl-generator": "node scripts/SSL/generate-ssl-node.js"
   },
   "dependencies": {
-    "debug": "^4.1.1"
+    "debug": "^4.1.1",
+    "svg-captcha": "^1.4.0"
   },
   "devDependencies": {
     "@babel/core": "^7.1.0",

@@ -1,6 +1,7 @@
 const {Helper} = global.kernel.helpers;
 
 import ArgvEncryptedChatServer from "./modules/argv-encrypted-chat-server"
+import ArgvCaptcha from "./modules/argv-captcha"
 
 /**
  *
@@ -11,6 +12,8 @@ import ArgvEncryptedChatServer from "./modules/argv-encrypted-chat-server"
 export default (argv) => Helper.merge( argv, {
 
     encryptedChatServer: ArgvEncryptedChatServer,
+
+    captcha: ArgvCaptcha,
 
 });
 

@@ -10,6 +10,7 @@ import EncryptedChatCommonSocketRouterPlugin from "./sockets/protocol/encrypted-
 
 import Tests from 'tests/tests/tests-index';
 import MainChat from "./main-chat/main-chat"
+import Captcha from "src/captcha/captcha"
 
 export default class App extends Kernel.utils.App {
 
@@ -42,9 +43,11 @@ export default class App extends Kernel.utils.App {
         this.events.on("start/argv-set", () =>{
 
             if ( !this._scope.MainChat ) this._scope.MainChat = MainChat;
+            if ( !this._scope.Captcha ) this._scope.Captcha = Captcha;
 
             this._scope.argv = Argv(this._scope.argv);
 
+            if (!this._scope.captcha) this._scope.captcha = new this._scope.Captcha(this._scope);
         });
 
         this.events.on("start/tests-args-middleware", ()=>{
