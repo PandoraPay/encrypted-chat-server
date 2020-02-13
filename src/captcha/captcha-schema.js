@@ -14,7 +14,7 @@ export default class CaptchaSchema extends DBSchema{
                     },
 
                     id:{
-                        fixedBytes: 64,
+                        fixedBytes: 32,
                     },
 
                     date:{

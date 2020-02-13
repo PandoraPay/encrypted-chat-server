@@ -39,17 +39,7 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
 
     }
 
-    _getEncryptedChatInfo(){
-
-        return {
-            index: this._scope.mainChat.data.index,
-            timestamp: this._scope.mainChat.data.timestamp,
-            target: this._scope.mainChat.data.target,
-        }
-
-    }
-
-    async _getCaptcha( { }, res, socket){
+    async _getCaptcha( data, res, socket){
 
         const out = await this._scope.captcha.createCaptcha();
         return out;
