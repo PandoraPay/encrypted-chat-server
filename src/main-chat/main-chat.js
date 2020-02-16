@@ -129,18 +129,18 @@ export default class MainChat extends Events {
             //TODO
         }
 
+        encryptedMessage.id = encryptedMessage.hash().toString("hex");
+        if (await encryptedMessage.exists() )
+            return false; //already exists
+
         const publicKeys = [
             encryptedMessage.senderPublicKey.toString("hex"),
             encryptedMessage.receiverPublicKey.toString("hex"),
         ].sort( (a,b) => a.localeCompare(b) );
         const count = await ChatConversationMessages.count( this._scope.db, undefined, "converMsgs:"+publicKeys[0]+"_"+publicKeys[1]);
 
-        if ( count === 0 || count % 5 === 0 || encryptedMessage )
+        if ( count % 5 === 0 || encryptedMessage.receiverEncryptedData.length > 1000 || encryptedMessage.senderEncryptedData.length > 1000 )
             await this._scope.captcha.solveCaptcha( captcha || {} );
-
-        encryptedMessage.id = encryptedMessage.hash().toString("hex");
-        if (await encryptedMessage.exists() )
-            return false; //already exists
 
         await encryptedMessage.save();
 
