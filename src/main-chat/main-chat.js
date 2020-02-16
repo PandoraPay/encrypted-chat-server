@@ -1,3 +1,5 @@
+import CaptchaSchema from "../captcha/captcha-schema";
+
 const {BN} = global.kernel.utils;
 const {Events} = global.kernel.helpers.events;
 const {Exception} = global.kernel.helpers;
@@ -103,9 +105,6 @@ export default class MainChat extends Events {
 
         }
         catch(error){
-
-            this._scope.logger.error(this, "newEncryptedMessage raised an error", error);
-
             err = error;
         }
         finally{

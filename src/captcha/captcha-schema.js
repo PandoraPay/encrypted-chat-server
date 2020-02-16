@@ -1,4 +1,5 @@
 const {DBSchema} = global.kernel.marshal.db;
+const {Helper, Exception, StringHelper} = global.kernel.helpers;
 
 export default class CaptchaSchema extends DBSchema{
 

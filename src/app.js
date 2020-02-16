@@ -29,6 +29,9 @@ export default class App extends Kernel.utils.App {
         if ( await scope.mainChat.initializeMainChat()  === false)
             throw new Exception(this, "MainChat couldn't be initialized");
 
+        if ( await scope.captcha.initializeCaptcha() === false)
+            throw new Exception(this, "Captcha couldn't be initialized");
+
         await this.events.emit("start/main-chat-created", scope);
 
         return mainChat;
@@ -48,7 +51,6 @@ export default class App extends Kernel.utils.App {
 
             this._scope.argv = Argv(this._scope.argv);
 
-            if (!this._scope.captcha) this._scope.captcha = new this._scope.Captcha(this._scope);
         });
 
         this.events.on("start/tests-args-middleware", ()=>{
@@ -65,6 +67,9 @@ export default class App extends Kernel.utils.App {
         });
 
         this.events.on("start/databases-connected", async ()=>{
+
+            if (!this._scope.captcha) this._scope.captcha = new this._scope.Captcha(this._scope);
+
 
         });
 
