@@ -90,29 +90,38 @@ export default class MainChat extends Events {
     }
 
 
-    async newEncryptedMessage(encryptedMessage, validateEncryptedMessage, propagateSockets, senderSockets){
+    async newEncryptedMessage(captcha, encryptedMessage, validateEncryptedMessage, propagateSockets, senderSockets){
 
-        let lock;
+        let out, lock, err;
+        try {
 
-        if (this._scope.db.isSynchronized )
-            lock = await this.data.lock( -1,  );
 
-        let out;
-        try{
+            if (this._scope.db.isSynchronized)
+                lock = await this.data.lock(-1,);
 
-            out = await this._newEncryptedMessage(encryptedMessage, validateEncryptedMessage, propagateSockets, senderSockets);
+            out = await this._newEncryptedMessage(captcha, encryptedMessage, validateEncryptedMessage, propagateSockets, senderSockets);
 
-        }catch(err){
-            this._scope.logger.error(this, "newEncryptedMessage raised an error", err);
+        }
+        catch(error){
+
+            this._scope.logger.error(this, "newEncryptedMessage raised an error", error);
+
+            err = error;
+        }
+        finally{
+
+            if (lock) lock();
+
         }
 
-        if (lock) lock();
+
+        if (err) throw err;
 
         return out;
 
     }
 
-    async _newEncryptedMessage(encryptedMessage, validateEncryptedMessage, propagateSockets = true, senderSockets){
+    async _newEncryptedMessage(captcha, encryptedMessage, validateEncryptedMessage, propagateSockets = true, senderSockets){
 
         const hash = encryptedMessage.hash();
         const hashId = hash.toString("hex");
@@ -120,6 +129,15 @@ export default class MainChat extends Events {
         if (validateEncryptedMessage){
             //TODO
         }
+
+        const publicKeys = [
+            encryptedMessage.senderPublicKey.toString("hex"),
+            encryptedMessage.receiverPublicKey.toString("hex"),
+        ].sort( (a,b) => a.localeCompare(b) );
+        const count = await ChatConversationMessages.count( this._scope.db, undefined, "converMsgs:"+publicKeys[0]+"_"+publicKeys[1]);
+
+        if ( count === 0 || count % 5 === 0 || encryptedMessage )
+            await this._scope.captcha.solveCaptcha( captcha || {} );
 
         encryptedMessage.id = encryptedMessage.hash().toString("hex");
         if (await encryptedMessage.exists() )
@@ -129,13 +147,6 @@ export default class MainChat extends Events {
 
         this.data.index = this.data.index + 1;
         await this.data.save();
-
-        const publicKeys = [
-            encryptedMessage.senderPublicKey.toString("hex"),
-            encryptedMessage.receiverPublicKey.toString("hex"),
-        ].sort( (a,b) => a.localeCompare(b) );
-
-        const count = await ChatConversationMessages.count( this._scope.db, undefined, "converMsgs:"+publicKeys[0]+"_"+publicKeys[1]);
 
         const conversation1 = new ChatConversations(this._scope, undefined, {
             table: "convers:"+encryptedMessage.senderPublicKey.toString("hex"),
@@ -175,7 +186,7 @@ export default class MainChat extends Events {
         await conversationMessage.save();
 
         if (propagateSockets)
-            this._scope.masterCluster.broadcast("encrypted-chat/new-message-id", {encryptedMessageId: hash}, senderSockets);
+            this._scope.masterCluster.broadcast("encrypted-chat/new-message-id", {captcha, encryptedMessageId: hash}, senderSockets);
 
         await this.emit("main-chat/new-encrypted-message", {
             data: { encryptedMessage, encryptedMessageId: hashId},

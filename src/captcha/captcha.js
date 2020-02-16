@@ -1,6 +1,6 @@
-const svgCaptcha = require('svg-captcha');
 const {Helper, Exception, StringHelper} = global.kernel.helpers;
 
+import captcha from "captcha"
 import CaptchaSchema from "./captcha-schema"
 
 export default class Captcha{
@@ -11,17 +11,13 @@ export default class Captcha{
 
     async createCaptcha(){
 
-        const captcha = svgCaptcha.create({
-            noise: 6,
-            color: true,
-            size: this._scope.argv.captcha.size,
-        });
+        const { token, buffer } = await captcha({size: this._scope.argv.captcha.size})
 
         const date = Math.floor( new Date().getTime() / 1000 );
 
         const message = {
             v: 0,
-            text: captcha.text,
+            text: token,
             id: StringHelper.generateRandomId(32),
             date,
         };
@@ -29,20 +25,21 @@ export default class Captcha{
         const encrypted = await this._scope.cryptography.cryptoSignature.encrypt( JSON.stringify(message), this._scope.argv.captcha.publicKey );
 
         return ({
-
-            captcha: {
-                size: this._scope.argv.captcha.size,
-                date,
-                data: captcha.data,
-                encryption: encrypted.toString("hex"),
-            },
-
+            size: this._scope.argv.captcha.size,
+            date,
+            data: `data:image/gif;base64,${buffer.toString('base64')}`,
+            encryption: encrypted.toString("hex"),
         });
 
 
     }
 
-    async solveCaptcha(solution, encryption){
+    async solveCaptcha({solution, encryption}){
+
+        if (!solution && !encryption) throw new Exception(this, "Captcha is missing");
+
+        if ( typeof solution === "string") throw new Exception(this, "Solution is not a string");
+        if ( typeof encryption === "string") throw new Exception(this, "Encryption is not a string");
 
         solution = StringHelper.sanitizeText(solution);
 

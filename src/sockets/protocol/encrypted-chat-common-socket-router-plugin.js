@@ -211,56 +211,64 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
     }
 
 
-    async _newEncryptedMessage({encryptedMessage}, res, socket){
+    async _newEncryptedMessage({ encryptedMessage, captcha}, res, socket){
 
         const encryptedMessageObject = this._scope.cryptography.encryptedMessageValidator.validateEncryptedMessage(encryptedMessage);
         const hash = encryptedMessageObject.hash().toString("hex");
 
         this._scope.logger.warn(this, "new encrypted message received", { hash });
 
-        let resolver;
-        this._encryptedChatDownloading[hash] = new Promise( resolve => resolver = resolve);
+        if (this._encryptedChatDownloading[hash]) return this._encryptedChatDownloading[hash];
 
-        let out;
+        let resolver, rejecter, out, err, promise;
+        promise = this._encryptedChatDownloading[hash] = new Promise( (resolve, reject) => { resolver = resolve; rejecter = reject });
 
         try{
-            out = await this._scope.mainChat.newEncryptedMessage( encryptedMessageObject, true, true, socket);
-        }catch(err){
-            if (this._scope.argv.debug.enabled)
-                this._scope.logger.error(this, "newExchange raised an error", err);
+            out = await this._scope.mainChat.newEncryptedMessage( captcha, encryptedMessageObject, true, true, socket);
+        }catch(error){
+
+            err = error;
+            rejecter(err)
+
+        }finally{
+
+            if (!err) resolver(!!out);
+
         }
 
-        resolver(!!out);
         delete this._encryptedChatDownloading[hash];
 
-        return !!out;
+        return promise;
     }
 
-    async _newEncryptedMessageId({encryptedMessageId}, res, socket){
+    async _newEncryptedMessageId({encryptedMessageId, captcha}, res, socket){
 
         if ( Buffer.isBuffer(encryptedMessageId) ) encryptedMessageId = encryptedMessageId.toString("hex");
 
-        let resolver;
-        this._encryptedChatDownloading[encryptedMessageId] = new Promise( resolve => resolver = resolve);
+        if (this._encryptedChatDownloading[encryptedMessageId]) return this._encryptedChatDownloading[encryptedMessageId];
 
-        let out;
+        let resolver, rejecter, out, err, promise;
+        promise = this._encryptedChatDownloading[encryptedMessageId] = new Promise( (resolve, reject) => { resolver = resolve; rejecter = reject });
 
         try{
 
             const encryptedMessage = await socket.emitAsync("encrypted-chat/get-message", { encryptedMessageId }, 0);
             const encryptedMessageObject = this._scope.cryptography.encryptedMessageValidator.validateEncryptedMessage(encryptedMessage);
 
-            out = await this._scope.mainChat.newEncryptedMessage( encryptedMessageObject, true, true, socket);
+            out = await this._scope.mainChat.newEncryptedMessage( captcha, encryptedMessageObject, true, true, socket);
 
-        }catch(err){
-            if (this._scope.argv.debug.enabled)
-                this._scope.logger.error(this, "newExchange raised an error", err);
+        }catch(error){
+            err = error;
+            rejecter(err)
+        }finally{
+
+            if (!err) resolver(!!out);
+
         }
 
-        resolver(!!out);
         delete this._encryptedChatDownloading[encryptedMessageId];
 
-        return !!out;
+        return promise;
 
     }
 
