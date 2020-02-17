@@ -36,17 +36,34 @@ export default class ChatConversations extends DBSchema {
                         position: 101,
                     },
 
+                    update:{
+                        type: "number",
+
+                        sorts :{
+
+                            updatesort:{
+
+                                score(){
+                                    return this.update;
+                                },
+
+                            }
+                        },
+
+                        position: 102,
+                    },
+
                     count:{
                         type: "number",
 
-                        position: 102,
+                        position: 103,
                     },
 
                     encryptedMessage:{
                         type: "buffer",
                         fixedBytes: 32,
 
-                        position: 103,
+                        position: 104,
                     }
 
 

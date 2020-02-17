@@ -2,10 +2,12 @@ export default {
 
     createNewTestNet: false,
 
-    protocolMaxConversationMessagesIds: 20,
-    protocolMaxConversationMessages: 10,
+    protocolMaxConversationMessagesIds: 10,
+    protocolMaxConversationMessages: 5,
 
     protocolMaxConversationsIds: 20,
     protocolMaxConversations: 10,
+
+    expiredEncryptedChatMessage: 30*24*60*60,
 
 }

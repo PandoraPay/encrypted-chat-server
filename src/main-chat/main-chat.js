@@ -126,7 +126,12 @@ export default class MainChat extends Events {
         const hashId = hash.toString("hex");
 
         if (validateEncryptedMessage){
-            //TODO
+
+            await encryptedMessage.verifyEncryptedMessage();
+            if (encryptedMessage.timestamp < new Date().getTime()/1000 - this._scope.argv.encryptedChatServer.expiredEncryptedChatMessage )
+                throw new Exception(this, "Encrypted message is too old");
+
+
         }
 
         encryptedMessage.id = encryptedMessage.hash().toString("hex");
@@ -156,6 +161,7 @@ export default class MainChat extends Events {
         await conversation1.exists();//loading ids
 
         conversation1.count = count+1;
+        conversation1.update = Math.floor( new Date().getTime()/1000 );
         conversation1.encryptedMessage = encryptedMessage.hash();
 
         await conversation1.save();
@@ -164,13 +170,12 @@ export default class MainChat extends Events {
             table: "convers:"+encryptedMessage.receiverPublicKey.toString("hex"),
             id: encryptedMessage.senderPublicKey.toString("hex"),
             receiverPublicKey: encryptedMessage.senderPublicKey,
-            count,
-            encryptedMessage: encryptedMessage.hash(),
         } );
 
         await conversation2.exists(); //loading ids
 
         conversation2.count = count+1;
+        conversation2.update = Math.floor( new Date().getTime()/1000 );
         conversation2.encryptedMessage = encryptedMessage.hash();
 
         await conversation2.save();

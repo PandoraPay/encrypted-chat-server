@@ -179,6 +179,7 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
 
     }
 
+    //TODO: right now the returned values are not sorted
     async _getEncryptedConversationsContentIds({ publicKey, index = Number.MAX_SAFE_INTEGER, limit = this._scope.argv.encryptedChatServer.protocolMaxConversationsIds }){
 
         if (Buffer.isBuffer(publicKey)) publicKey = publicKey.toString("hex");
@@ -205,7 +206,7 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
 
         limit = Math.max( 1, Math.min(limit, this._scope.argv.encryptedChatServer.protocolMaxConversations) );
 
-        const out = await this._scope.db.scan( ChatConversations, index, limit, '', "convers:"+publicKey, undefined );
+        const out = await this._scope.db.findBySort( ChatConversations, "updatesort", index, limit, '', "convers:"+publicKey, undefined );
 
         return out;
     }
