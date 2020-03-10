@@ -130,7 +130,7 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
 
     }
 
-    async _getEncryptedConversationMessagesContentIds({ publicKey1, publicKey2, index = Number.MAX_SAFE_INTEGER, limit = this._scope.argv.encryptedChatServer.protocolMaxConversationMessagesIds }){
+    async _getEncryptedConversationMessagesContentIds({ publicKey1, publicKey2, index = 0, limit = this._scope.argv.encryptedChatServer.protocolMaxConversationMessagesIds }){
 
         if (Buffer.isBuffer(publicKey1)) publicKey1 = publicKey1.toString("hex");
         if (Buffer.isBuffer(publicKey2)) publicKey2 = publicKey2.toString("hex");
@@ -180,7 +180,7 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
     }
 
     //TODO: right now the returned values are not sorted
-    async _getEncryptedConversationsContentIds({ publicKey, index = Number.MAX_SAFE_INTEGER, limit = this._scope.argv.encryptedChatServer.protocolMaxConversationsIds }){
+    async _getEncryptedConversationsContentIds({ publicKey, index = 0, limit = this._scope.argv.encryptedChatServer.protocolMaxConversationsIds }){
 
         if (Buffer.isBuffer(publicKey)) publicKey = publicKey.toString("hex");
 
@@ -197,7 +197,7 @@ export default class EncryptedChatCommonSocketRouterPlugin extends SocketRouterP
         return out;
     }
 
-    async _getEncryptedConversationsContent({ publicKey, index = Number.MAX_SAFE_INTEGER, limit = this._scope.argv.encryptedChatServer.protocolMaxConversations }){
+    async _getEncryptedConversationsContent({ publicKey, index = 0, limit = this._scope.argv.encryptedChatServer.protocolMaxConversations }){
 
         if (Buffer.isBuffer(publicKey)) publicKey = publicKey.toString("hex");
 
